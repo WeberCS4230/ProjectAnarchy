@@ -2,36 +2,12 @@ package projectanarchy;
 
 import java.io.StringWriter;
 import java.util.function.Consumer;
-
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.json.JSONWriter;
 
 public class MessageFactory
 {
-	final private static String module = "Battleship2"; // Not sure if this is correct.
-	
-	public static Boolean sendHitMiss(@SuppressWarnings("unused") int x, @SuppressWarnings("unused") int y)
-	{
-		Boolean HitMiss = null; // true for hit, false for miss
-		return HitMiss;
-	}
-	
-	public static String sendMove()
-	{
-		return application("move");
-	}
-	
-	public static String sendStart()
-	{
-		return application("start");
-	}
-	
-	public static String sendWin()
-	{
-		return application("win");
-	}
-	
+	private static String moduleString = "Battleship2";
+
 	private static String json(String type, Consumer<JSONWriter> message)
 	{
 		StringWriter stringWriter = new StringWriter();
@@ -44,59 +20,56 @@ public class MessageFactory
 		return stringWriter.toString();
 	}
 	
-	private static String application(String action)
+	private static String action(String action, Consumer<JSONWriter> message)
 	{
 		return json("application", writer ->
 		{
 			writer.object();
-			writer.key("module").value(module);
+			writer.key("module").value(moduleString);
 			writer.key("action").value(action);
+			message.accept(writer);
 			writer.endObject();
 		});
 	}
 	
-	public static String chat(String message)
+	public static String getChatMessage(ChatMessage chatMessage)
 	{
 		return json("chat", writer ->
 		{
-			writer.value(message);
+			writer.value(chatMessage.ChatMessage);
 		});
 	}
 	
-	public static String chat(String message, String username)
+	public static String getHitMessage(HitMessage hitMessage)
 	{
-		return json("chat", writer ->
+		return action("hit", writer ->
 		{
-			writer.value(message);
-			writer.key("username").value(username);
+			writer.key("hit").value(hitMessage.Hit);
 		});
 	}
 	
-	public static String login(String username, String password)
+	public static String getMoveMessage(MoveMessage moveMessage)
 	{
-		return json("login", writer ->
+		return action("move", writer ->
 		{
-			writer.object();
-			writer.key("username").value(username);
-			writer.key("password").value(password);
-			writer.endObject();
+			writer.key("x").value(moveMessage.XCoordinate);
+			writer.key("y").value(moveMessage.YCoordinate);
 		});
 	}
 	
-	public static MessageChat getChat(String json)
+	public static String getStartMessage(StartMessage startMessage)
 	{
-		JSONTokener tokener = new JSONTokener(json);
-		JSONObject object = new JSONObject(tokener);
-		return new MessageChat(object);
+		return action("start", writer ->
+		{
+			startMessage.getClass();
+		});
 	}
 	
-	public static String setChat(MessageChat chat)
+	public static String getWinMessage(WinMessage winMessage)
 	{
-		return json("chat", writer ->
+		return action("win", writer ->
 		{
-			writer.value(chat.getMessage());
-			writer.key("username");
-			writer.value(chat.getUsername());
+			winMessage.getClass();
 		});
 	}
 }
