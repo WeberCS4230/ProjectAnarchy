@@ -2,49 +2,64 @@ package projectanarchy;
 
 import org.json.JSONObject;
 
-public class Test extends Handler{
+import java.io.*;
+import java.net.*;
 
-    private static String module= "Battleship2";
+public class Test implements Runnable {
 
-    public static void main(String[] args){
+    private static final String MODULE = "ProjectAnarchy";
 
-        JSONObject login1 = new JSONObject("{ type: 'login', message: { username: 'client1' }}");
-        JSONObject login2 = new JSONObject("{ type: 'login', message: { username: 'client2' }}");
+    public static void main(String[] args) throws IOException {
 
-        JSONObject testHit = new JSONObject(MessageFactory.getHitMessage(new HitMessage(true)));
-        JSONObject testChat = new JSONObject(MessageFactory.getChatMessage(new ChatMessage("This is the chat text")));
-        JSONObject testMove = new JSONObject(MessageFactory.getMoveMessage(new MoveMessage(0, 0)));
-        JSONObject testStart = new JSONObject(MessageFactory.getStartMessage(new StartMessage()));
-        JSONObject testWin = new JSONObject(MessageFactory.getWinMessage(new WinMessage()));
-
-
-
-        Test client1 = new Test("8989");
-        client1.start();
-        Test client2 = new Test("8989");
-        client2.start();
-
-        client1.broadcast(login1, module);
-        client2.broadcast(login2, module);
-        client1.broadcast(testHit, module);
-        client2.broadcast(testHit, module);
-        client1.broadcast(testChat, module);
-        client2.broadcast(testChat, module);
-        client1.broadcast(testMove, module);
-        client2.broadcast(testMove, module);
-        client1.broadcast(testStart, module);
-        client2.broadcast(testStart, module);
-        client1.broadcast(testWin, module);
-        client2.broadcast(testWin, module);
-
+        Test client1 = new Test("localhost", "client1");
+        new Thread(client1).start();
+        Test client2 = new Test("localhost", "client2");
+        new Thread(client2).start();
     }
 
-    public Test(String portString) {
-        super(portString);
+    private PrintWriter out;
+
+    private String name;
+
+    private void send(JSONObject message) {
+    	out.println(message.toString());
+    	out.flush();
+    }
+
+    public Test(String host, String name) throws IOException {
+    	this.name = name;
+
+    	Socket socket = new Socket(host, 8989);
+
+    	BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    	out = new PrintWriter(socket.getOutputStream());
+
+    	new Thread(() -> {
+    	    try {
+		        while (true) {
+			        System.out.println(name + ": " + in.readLine());
+		        }
+	        } catch (IOException e) {
+    	    	e.printStackTrace();
+	        }
+    	}).start();
     }
 
     @Override
-    protected void handle(JSONObject message) {
+    public void run() {
+	    JSONObject login1 = new JSONObject("{ type: 'login', message: { username: '" + name + "' }}");
 
+	    JSONObject testHit = new JSONObject(MessageFactory.getHitMessage(new HitMessage(true)));
+	    JSONObject testChat = new JSONObject(MessageFactory.getChatMessage(new ChatMessage("This is the chat text")));
+	    JSONObject testMove = new JSONObject(MessageFactory.getMoveMessage(new MoveMessage(0, 0)));
+	    JSONObject testStart = new JSONObject(MessageFactory.getStartMessage(new StartMessage()));
+	    JSONObject testWin = new JSONObject(MessageFactory.getWinMessage(new WinMessage()));
+
+	    send(login1);
+	    send(testHit);
+	    send(testChat);
+	    send(testMove);
+	    send(testStart);
+	    send(testWin);
     }
 }
